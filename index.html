@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>LEXIS — Adaptive English</title>
+<!-- Powered by Google Gemini API -->
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -115,21 +116,22 @@ textarea.inp{resize:none;min-height:90px;line-height:1.5}
 
 <!-- SETUP -->
 <div id="sc-setup" class="sc on">
-  <div class="tb"><div><div class="logo">LEXIS</div><div class="sub">Adaptive English Course</div></div></div>
+  <div class="tb"><div><div class="logo">LEXIS</div><div class="sub">Adaptive English · Gemini AI</div></div></div>
   <div class="scroll">
     <div style="margin-bottom:28px">
       <h1 class="hero" style="margin-bottom:10px">Your personal<br>English course,<br><em>built by AI.</em></h1>
-      <p style="color:var(--t2);font-size:14px;line-height:1.6">LEXIS assesses your level across all four skills, then Claude builds a personalised 12-week programme and generates every lesson fresh — targeting exactly your weak points.</p>
+      <p style="color:var(--t2);font-size:14px;line-height:1.6">LEXIS assesses your level across all four skills, then builds a personalised 12-week programme and generates every lesson fresh — targeting exactly your weak points.</p>
     </div>
     <div style="margin-bottom:20px">
-      <div class="sec">Anthropic API Key</div>
-      <input class="inp" id="k-inp" type="password" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false" style="margin-bottom:10px">
+      <div class="sec">Google Gemini API Key</div>
+      <input class="inp" id="k-inp" type="password" placeholder="AIza..." autocomplete="off" spellcheck="false" style="margin-bottom:10px">
       <div class="card" style="font-size:13px;color:var(--t2);line-height:1.7">
         <strong style="color:var(--t1)">How to get a free key:</strong><br>
-        1. Go to <a href="https://console.anthropic.com" target="_blank" style="color:var(--gold)">console.anthropic.com</a><br>
-        2. Sign up → API Keys → Create key<br>
-        3. New accounts receive free credits<br><br>
-        🔒 Your key is stored only in <em>this browser</em>. It is sent exclusively to Anthropic's API — nowhere else.
+        1. Go to <a href="https://aistudio.google.com" target="_blank" style="color:var(--gold)">aistudio.google.com</a><br>
+        2. Sign in with Google → <strong style="color:var(--t1)">Get API key</strong> → Create API key<br>
+        3. Copy the key (starts with <code style="color:var(--gold)">AIza</code>)<br><br>
+        ✅ Completely free — no credit card required<br>
+        🔒 Stored only in this browser, sent only to Google's API.
       </div>
     </div>
     <button class="btn gold full" onclick="startSetup()">Begin placement test →</button>
@@ -253,7 +255,7 @@ const LISTENING_QS = [
 /* ══════════════════════════
    STATE
 ══════════════════════════ */
-let API_KEY = localStorage.getItem('lx_key') || '';
+let API_KEY = localStorage.getItem('lx_gemini_key') || '';
 let profile  = JSON.parse(localStorage.getItem('lx_profile') || 'null');
 let curriculum = JSON.parse(localStorage.getItem('lx_curr') || 'null');
 let progress = JSON.parse(localStorage.getItem('lx_prog') || '{"currentWeek":0,"currentLesson":0,"lessonsCompleted":[],"streak":0,"lastDate":"","totalCorrect":0,"totalAnswered":0}');
@@ -288,6 +290,7 @@ window.onload = () => {
   } else if (API_KEY) {
     document.getElementById('k-inp').value = API_KEY;
   }
+
 };
 
 /* ══════════════════════════
@@ -309,9 +312,9 @@ function show(name) {
 ══════════════════════════ */
 function startSetup() {
   const key = document.getElementById('k-inp').value.trim();
-  if (!key.startsWith('sk-ant')) { toast('Please enter a valid API key (starts with sk-ant)'); return; }
+  if (!key.startsWith('AIza')) { toast('Please enter a valid Gemini API key (starts with AIza)'); return; }
   API_KEY = key;
-  localStorage.setItem('lx_key', key);
+  localStorage.setItem('lx_gemini_key', key);
   startTest();
 }
 
@@ -935,38 +938,70 @@ function chatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat
 function clearChat(){chatHistory=[];document.getElementById('chat-msgs').innerHTML='';initChat();}
 
 /* ══════════════════════════
-   CLAUDE API
+   GEMINI API
 ══════════════════════════ */
-async function callAPI(messages,system,onChunk) {
-  const res=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-api-key':API_KEY,
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-direct-browser-access':'true',
-    },
-    body:JSON.stringify({
-      model:'claude-sonnet-4-20250514',
-      max_tokens:1500,
-      system,messages,
-      stream:!!onChunk,
-    })
-  });
-  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${res.status}`);}
-  if(onChunk){
-    const reader=res.body.getReader(),dec=new TextDecoder();let full='';
-    while(true){
-      const{done,value}=await reader.read();if(done)break;
-      for(const line of dec.decode(value).split('\n')){
-        if(line.startsWith('data: ')){
-          try{const d=JSON.parse(line.slice(6));if(d.delta?.text){full+=d.delta.text;onChunk(full);}}catch{}
+async function callAPI(messages, system, onChunk) {
+  // Convert OpenAI-style messages to Gemini format
+  const contents = messages.map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }]
+  }));
+
+  const body = {
+    system_instruction: { parts: [{ text: system }] },
+    contents,
+    generationConfig: {
+      maxOutputTokens: 1500,
+      temperature: 0.7,
+    }
+  };
+
+  const model = 'gemini-2.0-flash';
+
+  if (onChunk) {
+    // Streaming
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${API_KEY}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.error?.message || `HTTP ${res.status}`);
+    }
+    const reader = res.body.getReader(), dec = new TextDecoder();
+    let full = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const lines = dec.decode(value).split('\n');
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const d = JSON.parse(line.slice(6));
+            const chunk = d.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (chunk) { full += chunk; onChunk(full); }
+          } catch {}
         }
       }
     }
     return full;
+  } else {
+    // Non-streaming
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.error?.message || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
   }
-  const data=await res.json();return data.content[0].text;
 }
 
 /* ══════════════════════════
