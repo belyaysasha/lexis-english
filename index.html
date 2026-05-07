@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>LEXIS — Adaptive English</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0b0d;--s1:#131315;--s2:#1a1a1e;--s3:#212126;
+  --bd:#2a2a32;--bd2:#363640;
+  --gold:#d4a853;--gold-d:rgba(212,168,83,.14);
+  --teal:#6eb8a0;--red:#c96060;--purple:#9b7fd4;
+  --t1:#ece8df;--t2:#8c8880;--t3:#525055;
+  --r:16px;--rsm:10px;
+  --sb:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--t1);font-family:'DM Sans',sans-serif;font-size:15px;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100dvh;max-width:520px;margin:0 auto;position:relative;overflow:hidden}
+.sc{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transform:translateY(14px);transition:opacity .25s,transform .25s}
+.sc.on{opacity:1;pointer-events:all;transform:none}
+.tb{display:flex;align-items:center;gap:10px;padding:14px 18px 12px;border-bottom:1px solid var(--bd);flex-shrink:0;background:var(--bg);z-index:10}
+.tb .logo{font-family:'Playfair Display',serif;font-size:19px;color:var(--gold)}
+.tb .sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--t3);margin-top:1px}
+.tb .sp{flex:1}
+.tb .chip{font-family:'DM Mono',monospace;font-size:10px;color:var(--t3);border:1px solid var(--bd);padding:3px 9px;border-radius:20px;cursor:pointer}
+.bk{background:none;border:none;color:var(--t2);font-size:22px;cursor:pointer;padding:2px 10px 2px 0;line-height:1;flex-shrink:0}
+.scroll{flex:1;overflow-y:auto;padding:20px 18px 80px}
+h1.hero{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;line-height:1.15}
+h1.hero em{font-style:italic;color:var(--gold)}
+.sec{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--t3);margin-bottom:10px}
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:18px}
+.card+.card{margin-top:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;border-radius:var(--rsm);transition:all .18s;font-size:15px;padding:13px 20px}
+.btn:active{filter:brightness(.85)}
+.btn.gold{background:var(--gold);color:#1a1200}
+.btn.ghost{background:none;border:1px solid var(--bd);color:var(--t2)}
+.btn.full{width:100%}
+.btn.sm{padding:8px 14px;font-size:13px}
+.btn:disabled{opacity:.4;cursor:not-allowed;filter:none}
+.inp{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);padding:13px 15px;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--t1);outline:none;transition:border-color .2s}
+.inp:focus{border-color:var(--gold)}
+.inp::placeholder{color:var(--t3)}
+textarea.inp{resize:none;min-height:90px;line-height:1.5}
+.prog-wrap{height:4px;background:var(--bd);border-radius:2px;overflow:hidden;margin:10px 0}
+.prog-fill{height:100%;background:var(--gold);border-radius:2px;transition:width .5s ease}
+.skill-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.skill-label{font-size:13px;color:var(--t2);width:110px;flex-shrink:0}
+.skill-bar{flex:1;height:8px;background:var(--bd);border-radius:4px;overflow:hidden}
+.skill-fill{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.skill-val{font-family:'DM Mono',monospace;font-size:11px;color:var(--t3);width:32px;text-align:right;flex-shrink:0}
+.opts{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.opt{background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);padding:12px 15px;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:10px;transition:all .18s}
+.opt:active{transform:scale(.98)}
+.opt .ol{font-family:'DM Mono',monospace;font-size:11px;color:var(--t3);width:18px;flex-shrink:0}
+.opt.ok{border-color:var(--teal);background:rgba(110,184,160,.1);color:var(--teal)}
+.opt.bad{border-color:var(--red);background:rgba(201,96,96,.08);color:var(--red)}
+.opt.dis{pointer-events:none}
+.fb{background:var(--s2);border-left:3px solid var(--gold);border-radius:var(--rsm);padding:12px 14px;font-size:13px;color:var(--t2);line-height:1.6;margin-top:12px;display:none}
+.fb.on{display:block}
+.fb.ok{border-left-color:var(--teal)}
+.fb.bad{border-left-color:var(--red)}
+#tab{display:flex;background:var(--s1);border-top:1px solid var(--bd);padding:7px 0;padding-bottom:calc(7px + var(--sb));flex-shrink:0}
+.t{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 2px;background:none;border:none}
+.t .ti{font-size:20px;line-height:1}
+.t .tl{font-size:10px;color:var(--t3)}
+.t.on .tl{color:var(--gold)}
+.msgs{flex:1;overflow-y:auto;padding:12px 14px 8px;display:flex;flex-direction:column;gap:8px}
+.msg{display:flex;gap:7px;max-width:88%}
+.msg.u{align-self:flex-end;flex-direction:row-reverse}
+.msg.a{align-self:flex-start}
+.bubble{padding:10px 13px;border-radius:15px;font-size:14px;line-height:1.5}
+.msg.u .bubble{background:var(--gold);color:#1a1200;border-bottom-right-radius:3px}
+.msg.a .bubble{background:var(--s2);color:var(--t1);border-bottom-left-radius:3px;border:1px solid var(--bd)}
+.av{width:26px;height:26px;border-radius:50%;background:var(--s3);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;align-self:flex-end}
+.cin-row{display:flex;gap:8px;padding:9px 13px;border-top:1px solid var(--bd);background:var(--bg);padding-bottom:calc(9px + var(--sb));flex-shrink:0}
+.cin{flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:20px;padding:10px 15px;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--t1);outline:none;resize:none;max-height:110px;overflow-y:auto;transition:border-color .2s;line-height:1.4}
+.cin:focus{border-color:var(--gold)}
+.sbtn{width:40px;height:40px;border-radius:50%;background:var(--gold);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;align-self:flex-end;transition:filter .2s}
+.sbtn:active{filter:brightness(.85)}
+.sbtn:disabled{background:var(--s3);cursor:not-allowed}
+.week-card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:16px 18px;margin-bottom:10px;cursor:pointer;transition:all .2s}
+.week-card.active-week{border-color:var(--gold);background:var(--gold-d)}
+.week-card.done-week{border-color:var(--teal);opacity:.7}
+.wk-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.wk-num{font-family:'DM Mono',monospace;font-size:11px;color:var(--t3)}
+.wk-title{font-size:15px;font-weight:500;flex:1}
+.wk-badge{font-size:10px;padding:2px 8px;border-radius:20px;font-family:'DM Mono',monospace;flex-shrink:0}
+.wk-badge.curr{background:var(--gold-d);color:var(--gold);border:1px solid rgba(212,168,83,.3)}
+.wk-badge.done{background:rgba(110,184,160,.1);color:var(--teal);border:1px solid rgba(110,184,160,.3)}
+.focus-tag{font-size:11px;color:var(--t3);background:var(--s2);border:1px solid var(--bd);padding:2px 8px;border-radius:20px}
+.mic-btn{width:76px;height:76px;border-radius:50%;border:2px solid var(--bd);background:none;display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer;transition:all .3s;margin:0 auto}
+.mic-btn.active{border-color:var(--red);box-shadow:0 0 0 8px rgba(201,96,96,.12),0 0 0 16px rgba(201,96,96,.06);animation:mp 1.4s ease-in-out infinite}
+@keyframes mp{0%,100%{box-shadow:0 0 0 6px rgba(201,96,96,.12),0 0 0 14px rgba(201,96,96,.05)}50%{box-shadow:0 0 0 14px rgba(201,96,96,.16),0 0 0 24px rgba(201,96,96,.04)}}
+.dots{display:inline-flex;gap:4px;align-items:center}
+.dots span{width:5px;height:5px;border-radius:50%;background:var(--gold);animation:dp 1.1s ease-in-out infinite}
+.dots span:nth-child(2){animation-delay:.18s}
+.dots span:nth-child(3){animation-delay:.36s}
+@keyframes dp{0%,80%,100%{transform:scale(.5);opacity:.3}40%{transform:scale(1);opacity:1}}
+.spd-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.spd{background:var(--s2);border:1px solid var(--bd);border-radius:20px;padding:5px 11px;font-family:'DM Mono',monospace;font-size:11px;color:var(--t2);cursor:pointer;transition:all .2s}
+.spd.on{border-color:var(--gold);color:var(--gold)}
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(14px);background:var(--s3);border:1px solid var(--bd2);border-radius:var(--rsm);padding:9px 16px;font-size:13px;color:var(--t1);white-space:nowrap;opacity:0;transition:all .25s;pointer-events:none;z-index:9999}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
+[contenteditable]:empty:before{content:attr(placeholder);color:var(--t3);pointer-events:none}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- SETUP -->
+<div id="sc-setup" class="sc on">
+  <div class="tb"><div><div class="logo">LEXIS</div><div class="sub">Adaptive English Course</div></div></div>
+  <div class="scroll">
+    <div style="margin-bottom:28px">
+      <h1 class="hero" style="margin-bottom:10px">Your personal<br>English course,<br><em>built by AI.</em></h1>
+      <p style="color:var(--t2);font-size:14px;line-height:1.6">LEXIS assesses your level across all four skills, then Claude builds a personalised 12-week programme and generates every lesson fresh — targeting exactly your weak points.</p>
+    </div>
+    <div style="margin-bottom:20px">
+      <div class="sec">Anthropic API Key</div>
+      <input class="inp" id="k-inp" type="password" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false" style="margin-bottom:10px">
+      <div class="card" style="font-size:13px;color:var(--t2);line-height:1.7">
+        <strong style="color:var(--t1)">How to get a free key:</strong><br>
+        1. Go to <a href="https://console.anthropic.com" target="_blank" style="color:var(--gold)">console.anthropic.com</a><br>
+        2. Sign up → API Keys → Create key<br>
+        3. New accounts receive free credits<br><br>
+        🔒 Your key is stored only in <em>this browser</em>. It is sent exclusively to Anthropic's API — nowhere else.
+      </div>
+    </div>
+    <button class="btn gold full" onclick="startSetup()">Begin placement test →</button>
+    <p style="font-size:12px;color:var(--t3);text-align:center;margin-top:10px">The assessment takes about 10–15 minutes</p>
+  </div>
+</div>
+
+<!-- PLACEMENT TEST -->
+<div id="sc-test" class="sc">
+  <div class="tb">
+    <div><div class="logo" style="font-size:17px">Placement Test</div><div class="sub" id="test-sub">Grammar</div></div>
+    <div class="sp"></div>
+    <div class="chip" id="test-chip">1 / 15</div>
+  </div>
+  <div style="padding:10px 18px 0;flex-shrink:0">
+    <div class="prog-wrap"><div class="prog-fill" id="test-prog" style="width:5%"></div></div>
+  </div>
+  <div class="scroll" id="test-body"></div>
+</div>
+
+<!-- RESULTS -->
+<div id="sc-results" class="sc">
+  <div class="tb"><div><div class="logo" style="font-size:17px">Your Profile</div><div class="sub">Assessment results</div></div></div>
+  <div class="scroll" id="results-body"></div>
+</div>
+
+<!-- HOME -->
+<div id="sc-home" class="sc">
+  <div class="tb">
+    <div><div class="logo">LEXIS</div><div class="sub" id="home-lv"></div></div>
+    <div class="sp"></div>
+    <div class="chip" onclick="show('curr')">📋 Programme</div>
+  </div>
+  <div class="scroll" id="home-body"></div>
+</div>
+
+<!-- CURRICULUM -->
+<div id="sc-curr" class="sc">
+  <div class="tb">
+    <button class="bk" onclick="show('home')">←</button>
+    <div><div class="logo" style="font-size:17px">Programme</div><div class="sub" id="curr-sub">12 weeks</div></div>
+  </div>
+  <div class="scroll" id="curr-body"></div>
+</div>
+
+<!-- LESSON -->
+<div id="sc-lesson" class="sc">
+  <div class="tb">
+    <button class="bk" onclick="show('home')">←</button>
+    <div><div class="logo" style="font-size:17px" id="lesson-title">Lesson</div><div class="sub" id="lesson-sub"></div></div>
+    <div class="sp"></div>
+    <div class="chip" id="lesson-score">0/0</div>
+  </div>
+  <div class="scroll" id="lesson-body"></div>
+</div>
+
+<!-- CHAT -->
+<div id="sc-chat" class="sc">
+  <div class="tb">
+    <button class="bk" onclick="show('home')">←</button>
+    <div><div class="logo" style="font-size:17px">Conversation</div><div class="sub">Claude corrects & responds</div></div>
+    <div class="sp"></div>
+    <button class="btn ghost sm" onclick="clearChat()">Clear</button>
+  </div>
+  <div class="msgs" id="chat-msgs"></div>
+  <div class="cin-row">
+    <div class="cin" id="cin" contenteditable="true" placeholder="Write anything in English…" onkeydown="chatKey(event)"></div>
+    <button class="sbtn" id="sbtn" onclick="sendChat()">➤</button>
+  </div>
+</div>
+
+<!-- TABBAR -->
+<div id="tab" style="display:none">
+  <button class="t" id="t-home" onclick="show('home')"><div class="ti">🏠</div><div class="tl">Home</div></button>
+  <button class="t" id="t-lesson" onclick="startLesson()"><div class="ti">📚</div><div class="tl">Lesson</div></button>
+  <button class="t" id="t-chat" onclick="show('chat')"><div class="ti">💬</div><div class="tl">Practice</div></button>
+  <button class="t" id="t-curr" onclick="show('curr')"><div class="ti">📋</div><div class="tl">Programme</div></button>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════
+   PLACEMENT TEST DATA
+══════════════════════════ */
+const GRAMMAR_QS = [
+  {q:"She insisted that the manager ___ the report personally.",opts:["reviews","reviewed","review","will review"],a:2,ex:"The subjunctive mood is required after 'insist that' — use the base form regardless of subject."},
+  {q:"No sooner ___ the meeting than the fire alarm went off.",opts:["we had left","had we left","we left","did we leave"],a:1,ex:"After 'no sooner … than', subject-auxiliary inversion is obligatory in formal English: 'No sooner had we left…'"},
+  {q:"___ he invested in that company, he would be a millionaire now.",opts:["If","Had","Should","Were"],a:1,ex:"Inverted third conditional: 'Had he invested' is the formal equivalent of 'If he had invested'."},
+  {q:"The data, along with the methodology, ___ currently being reviewed.",opts:["is","are","was","were"],a:0,ex:"'Along with' is a preposition, not a conjunction. The grammatical subject remains 'data', treated here as a singular mass noun."},
+  {q:"By the time the auditors arrive, the team ___ all the documents.",opts:["will review","reviews","will have reviewed","is reviewing"],a:2,ex:"The future perfect ('will have reviewed') signals completion before a specified future point."},
+  {q:"It was proposed that the committee ___ its findings by March.",opts:["publishes","published","publish","will publish"],a:2,ex:"Mandative subjunctive after 'proposed that': the base form 'publish' is required in formal/academic English."},
+  {q:"Rarely ___ such blatant disregard for due process.",opts:["I have witnessed","have I witnessed","I witnessed","did I witness"],a:1,ex:"A negative adverb at the start of a clause triggers subject-auxiliary inversion: 'Rarely have I witnessed…'"},
+  {q:"The policy ___ in 2018 has since been superseded.",opts:["enacted","was enacted","enacting","having enacted"],a:0,ex:"Reduced relative clause: 'The policy [that was] enacted in 2018'. The past participle acts as a modifier."},
+];
+
+const VOCAB_QS = [
+  {q:"The report was criticised for its ___ reasoning — sweeping conclusions drawn from minimal data.",opts:["pellucid","specious","laconic","sanguine"],a:1,ex:"Specious = superficially plausible but actually wrong. Pellucid = clear; laconic = brief; sanguine = optimistic."},
+  {q:"His ___ manner in front of senior management irritated his more self-assured colleagues.",opts:["truculent","obsequious","perfidious","refractory"],a:1,ex:"Obsequious = excessively eager to please; servile. Truculent = aggressively defiant; perfidious = treacherous."},
+  {q:"The minister ___ when pressed for a direct answer, using vague language to avoid commitment.",opts:["equivocated","ameliorated","gainsaid","ululated"],a:0,ex:"Equivocate = use deliberately ambiguous language to avoid committing to a position."},
+  {q:"Despite its ___ lineage, the institution has struggled to adapt to the demands of the modern era.",opts:["inimical","tendentious","venerable","bathetic"],a:2,ex:"Venerable = accorded great respect due to age, wisdom, or historical significance."},
+];
+
+const LISTENING_QS = [
+  {
+    text:"The concept of epistemic humility — acknowledging the limits of one's own knowledge — is frequently invoked but rarely practised. In academic discourse, scholars who express uncertainty are sometimes perceived as lacking conviction, when in fact intellectual honesty requires precisely such acknowledgement. The philosopher John Dewey argued that genuine inquiry begins not with certainty but with a felt difficulty — a recognition that one does not yet know. It is this productive discomfort, rather than the confident assertion of fixed positions, that drives genuine learning.",
+    q:"What does the passage suggest about scholars who openly express uncertainty?",
+    opts:["They are widely admired for their honesty","They may be misjudged as lacking conviction","They adhere strictly to Dewey's philosophy","They consistently produce better research"],
+    a:1,
+    ex:"The passage states they are 'sometimes perceived as lacking conviction' — despite their intellectual honesty."
+  },
+  {
+    text:"Regulatory capture refers to the process by which a regulatory agency, created to act in the public interest, instead advances the commercial or political interests of the very industry it is supposed to oversee. This phenomenon typically emerges gradually, through revolving doors between government and industry, shared professional norms, and the information asymmetry that makes regulators dependent on industry expertise. The consequences are systemic: when watchdogs become advocates, the public interest is, by definition, unrepresented.",
+    q:"According to the passage, what makes regulators particularly vulnerable to capture?",
+    opts:["Chronic underfunding of regulatory bodies","Information asymmetry and revolving-door dynamics","Public indifference to regulatory affairs","Conflicts between competing pieces of legislation"],
+    a:1,
+    ex:"The passage explicitly names 'revolving doors between government and industry' and 'information asymmetry' as the key mechanisms."
+  },
+];
+
+/* ══════════════════════════
+   STATE
+══════════════════════════ */
+let API_KEY = localStorage.getItem('lx_key') || '';
+let profile  = JSON.parse(localStorage.getItem('lx_profile') || 'null');
+let curriculum = JSON.parse(localStorage.getItem('lx_curr') || 'null');
+let progress = JSON.parse(localStorage.getItem('lx_prog') || '{"currentWeek":0,"currentLesson":0,"lessonsCompleted":[],"streak":0,"lastDate":"","totalCorrect":0,"totalAnswered":0}');
+
+let testPhase = 'grammar';
+let testQIdx  = 0;
+let testAnswers = {grammar:[],vocab:[],listening:[],speaking:null};
+let testGScore = 0, testVScore = 0, testLScore = 0;
+
+let lessonData = null;
+let lessonCorrect = 0, lessonTotal = 0;
+let answeredExs = {};
+let ttsRate = 1.0;
+
+let chatHistory = [];
+let chatStreaming = false;
+
+const TOTAL_QS = GRAMMAR_QS.length + VOCAB_QS.length + LISTENING_QS.length + 1;
+
+/* ══════════════════════════
+   INIT
+══════════════════════════ */
+window.onload = () => {
+  if (window.speechSynthesis) { speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = ()=>{}; }
+  checkStreak();
+  if (API_KEY && profile && curriculum) {
+    renderHome(); show('home');
+    document.getElementById('tab').style.display = 'flex';
+  } else if (API_KEY && profile) {
+    renderResults(); show('results');
+    document.getElementById('tab').style.display = 'flex';
+  } else if (API_KEY) {
+    document.getElementById('k-inp').value = API_KEY;
+  }
+};
+
+/* ══════════════════════════
+   NAVIGATION
+══════════════════════════ */
+function show(name) {
+  document.querySelectorAll('.sc').forEach(s => s.classList.remove('on'));
+  document.getElementById('sc-'+name).classList.add('on');
+  document.querySelectorAll('.t').forEach(t => t.classList.remove('on'));
+  const map = {home:'t-home',lesson:'t-lesson',chat:'t-chat',curr:'t-curr'};
+  if (map[name]) document.getElementById(map[name]).classList.add('on');
+  if (name==='curr')    renderCurriculum();
+  if (name==='chat')    initChat();
+  if (name==='home')    renderHome();
+}
+
+/* ══════════════════════════
+   SETUP
+══════════════════════════ */
+function startSetup() {
+  const key = document.getElementById('k-inp').value.trim();
+  if (!key.startsWith('sk-ant')) { toast('Please enter a valid API key (starts with sk-ant)'); return; }
+  API_KEY = key;
+  localStorage.setItem('lx_key', key);
+  startTest();
+}
+
+/* ══════════════════════════
+   PLACEMENT TEST
+══════════════════════════ */
+function startTest() {
+  testPhase='grammar'; testQIdx=0;
+  testAnswers={grammar:[],vocab:[],listening:[],speaking:null};
+  testGScore=0; testVScore=0; testLScore=0;
+  show('test'); renderTestQ();
+}
+
+function updateTestProg() {
+  const done = testAnswers.grammar.length + testAnswers.vocab.length + testAnswers.listening.length;
+  document.getElementById('test-prog').style.width = Math.round(done/TOTAL_QS*100)+'%';
+  document.getElementById('test-chip').textContent = (done+1)+' / '+TOTAL_QS;
+}
+
+function renderTestQ() {
+  const body = document.getElementById('test-body');
+  updateTestProg();
+
+  if (testPhase==='grammar') {
+    document.getElementById('test-sub').textContent = 'Grammar';
+    const q = GRAMMAR_QS[testQIdx];
+    body.innerHTML = `
+      <div class="sec">Question ${testQIdx+1} of ${GRAMMAR_QS.length} — choose the correct option</div>
+      <div class="card"><p style="font-size:16px;line-height:1.6">${q.q.replace('___','<strong style="color:var(--gold)">___</strong>')}</p></div>
+      <div class="opts" id="test-opts">
+        ${q.opts.map((o,i)=>`<div class="opt" onclick="answerTest(${i})"><span class="ol">${'ABCD'[i]}</span>${o}</div>`).join('')}
+      </div>
+      <div class="fb" id="test-fb"></div>`;
+  }
+  else if (testPhase==='vocab') {
+    document.getElementById('test-sub').textContent = 'Vocabulary';
+    const q = VOCAB_QS[testQIdx];
+    body.innerHTML = `
+      <div class="sec">Choose the word that best fits the context</div>
+      <div class="card"><p style="font-size:16px;line-height:1.6">${q.q.replace('___','<strong style="color:var(--gold)">___</strong>')}</p></div>
+      <div class="opts" id="test-opts">
+        ${q.opts.map((o,i)=>`<div class="opt" onclick="answerTest(${i})"><span class="ol">${'ABCD'[i]}</span>${o}</div>`).join('')}
+      </div>
+      <div class="fb" id="test-fb"></div>`;
+  }
+  else if (testPhase==='listening') {
+    document.getElementById('test-sub').textContent = 'Listening';
+    const q = LISTENING_QS[testQIdx];
+    body.innerHTML = `
+      <div class="sec">Listen to the passage, then answer the question</div>
+      <div class="card" style="margin-bottom:10px">
+        <p style="font-size:13px;color:var(--t2);line-height:1.75">${q.text}</p>
+      </div>
+      <div class="spd-row">
+        <span class="spd on" onclick="setSpd(1.0,this)">1×</span>
+        <span class="spd" onclick="setSpd(0.75,this)">0.75×</span>
+        <span class="spd" onclick="setSpd(0.6,this)">0.6×</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="btn gold sm" onclick="speak(LISTENING_QS[testQIdx].text,ttsRate)">▶ Play</button>
+        <button class="btn ghost sm" onclick="speechSynthesis.cancel()">■ Stop</button>
+      </div>
+      <div class="card" style="margin-bottom:10px"><p style="font-size:14px">${q.q}</p></div>
+      <div class="opts" id="test-opts">
+        ${q.opts.map((o,i)=>`<div class="opt" onclick="answerTest(${i})"><span class="ol">${'ABCD'[i]}</span>${o}</div>`).join('')}
+      </div>
+      <div class="fb" id="test-fb"></div>`;
+  }
+  else if (testPhase==='speaking') {
+    document.getElementById('test-sub').textContent = 'Speaking';
+    document.getElementById('test-prog').style.width = '92%';
+    document.getElementById('test-chip').textContent = TOTAL_QS+' / '+TOTAL_QS;
+    const hasSR = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+    body.innerHTML = `
+      <div class="sec">Read the sentence aloud as naturally as you can</div>
+      <div class="card" style="margin-bottom:14px">
+        <p style="font-family:'Playfair Display',serif;font-size:19px;line-height:1.45;color:var(--t1)">
+          "The ramifications of this decision will reverberate throughout the organisation for years to come."
+        </p>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:20px">
+        <button class="btn gold sm" onclick="speak('The ramifications of this decision will reverberate throughout the organisation for years to come.',0.85)">🔊 Hear example</button>
+        <button class="btn ghost sm" onclick="speak('The ramifications of this decision will reverberate throughout the organisation for years to come.',0.65)">🐢 Slow</button>
+      </div>
+      <div style="text-align:center;margin-bottom:16px">
+        <button class="mic-btn" id="test-mic" onclick="toggleTestMic()">${hasSR?'🎤':'🎤'}</button>
+        <p style="margin-top:10px;font-size:13px;color:var(--t2)" id="test-mic-st">${hasSR?'Tap and speak':'Microphone unavailable — enable it in Safari Settings'}</p>
+      </div>
+      <div id="test-spk-result" style="background:var(--s2);border-radius:var(--rsm);padding:13px;font-size:14px;color:var(--t2);min-height:50px;margin-bottom:14px">Your speech will appear here…</div>
+      <button class="btn gold full" onclick="finishSpeakingTest(null)">Skip this step →</button>
+      <button class="btn ghost full" id="test-submit-spk" onclick="finishSpeakingTest('done')" style="margin-top:8px;display:none">Save & continue ✓</button>`;
+  }
+}
+
+function answerTest(i) {
+  let q, correct;
+  if (testPhase==='grammar')   { q=GRAMMAR_QS[testQIdx];   correct=i===q.a; if(correct)testGScore++; testAnswers.grammar.push(i); }
+  else if (testPhase==='vocab'){ q=VOCAB_QS[testQIdx];     correct=i===q.a; if(correct)testVScore++; testAnswers.vocab.push(i); }
+  else                          { q=LISTENING_QS[testQIdx]; correct=i===q.a; if(correct)testLScore++; testAnswers.listening.push(i); }
+
+  document.querySelectorAll('#test-opts .opt').forEach((o,oi)=>{
+    o.classList.add('dis');
+    if(oi===q.a) o.classList.add('ok');
+    else if(oi===i&&!correct) o.classList.add('bad');
+  });
+  const fb = document.getElementById('test-fb');
+  fb.textContent = (correct?'✓ Correct. ':'✗ Incorrect. ') + q.ex;
+  fb.className = 'fb on '+(correct?'ok':'bad');
+  setTimeout(()=>nextTestQ(), 1900);
+}
+
+function nextTestQ() {
+  if (testPhase==='grammar')    { testQIdx++; if(testQIdx>=GRAMMAR_QS.length)  { testPhase='vocab';    testQIdx=0; } }
+  else if (testPhase==='vocab') { testQIdx++; if(testQIdx>=VOCAB_QS.length)    { testPhase='listening';testQIdx=0; } }
+  else                          { testQIdx++; if(testQIdx>=LISTENING_QS.length){ testPhase='speaking'; testQIdx=0; } }
+  renderTestQ();
+}
+
+let testListening=false, testRec=null;
+function toggleTestMic() {
+  if(testListening){stopTestMic();return;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){toast('Enable microphone in Safari Settings');return;}
+  testRec=new SR(); testRec.lang='en-US'; testRec.continuous=false; testRec.interimResults=true;
+  testRec.onstart=()=>{
+    testListening=true;
+    document.getElementById('test-mic').classList.add('active');
+    document.getElementById('test-mic-st').textContent='Listening…';
+  };
+  testRec.onresult=e=>{
+    const t=Array.from(e.results).map(r=>r[0].transcript).join('');
+    document.getElementById('test-spk-result').textContent=t;
+    if(e.results[e.results.length-1].isFinal){
+      document.getElementById('test-submit-spk').style.display='block';
+      testAnswers.speaking=t;
+    }
+  };
+  testRec.onerror=()=>stopTestMic();
+  testRec.onend=()=>stopTestMic();
+  testRec.start();
+}
+function stopTestMic() {
+  testListening=false; if(testRec)testRec.stop();
+  const m=document.getElementById('test-mic'); if(m)m.classList.remove('active');
+  const s=document.getElementById('test-mic-st'); if(s)s.textContent='Tap and speak';
+}
+function finishSpeakingTest(val) { testAnswers.speaking=val; finishTest(); }
+
+async function finishTest() {
+  document.getElementById('test-prog').style.width='100%';
+  document.getElementById('test-body').innerHTML=`<div style="text-align:center;padding:44px 20px">
+    <div class="dots"><span></span><span></span><span></span></div>
+    <p style="margin-top:14px;color:var(--t2);font-size:14px">Claude is analysing your results…</p>
+  </div>`;
+
+  const gP=Math.round(testGScore/GRAMMAR_QS.length*100);
+  const vP=Math.round(testVScore/VOCAB_QS.length*100);
+  const lP=Math.round(testLScore/LISTENING_QS.length*100);
+
+  const sys=`You are an expert English language assessor. Based on test scores, produce a JSON profile. Respond ONLY with JSON, no markdown, no commentary outside the JSON object.`;
+  const msg=`Test results:
+- Grammar:   ${testGScore}/${GRAMMAR_QS.length} (${gP}%)
+- Vocabulary:${testVScore}/${VOCAB_QS.length} (${vP}%)
+- Listening: ${testLScore}/${LISTENING_QS.length} (${lP}%)
+- Speaking sample: ${testAnswers.speaking?'"'+testAnswers.speaking+'"':'not provided'}
+
+Assign a CEFR level (A1/A2/B1/B2/C1/C2) for each skill.
+Return this exact JSON structure:
+{"grammar":"C1","vocabulary":"B2","listening":"C1","speaking":"B2","overall_level":"C1","strengths":["specific strength 1","specific strength 2"],"weaknesses":["specific weakness 1","specific weakness 2","specific weakness 3"],"summary":"Two sentence assessment of the learner's current English level."}`;
+
+  try {
+    const raw = await callAPI([{role:'user',content:msg}], sys);
+    profile = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    profile.scores = {grammar:gP, vocabulary:vP, listening:lP};
+  } catch(e) {
+    profile = fallbackProfile(gP,vP,lP);
+  }
+  localStorage.setItem('lx_profile', JSON.stringify(profile));
+  renderResults(); show('results');
+  document.getElementById('tab').style.display='flex';
+}
+
+function fallbackProfile(g,v,l) {
+  const avg=(g+v+l)/3;
+  const lv=avg>=85?'C2':avg>=70?'C1':avg>=55?'B2':avg>=40?'B1':'A2';
+  return {grammar:lv,vocabulary:lv,listening:lv,speaking:'B2',overall_level:lv,
+    strengths:['Solid grammatical awareness','Good command of advanced vocabulary'],
+    weaknesses:['Complex structures under pressure','Idiomatic and colloquial usage','Listening at natural pace'],
+    summary:`You have a strong foundation at the ${lv} level. Focused practice on nuance and fluency will push you further.`,
+    scores:{grammar:g,vocabulary:v,listening:l}};
+}
+
+/* ══════════════════════════
+   RESULTS
+══════════════════════════ */
+function renderResults() {
+  const b=document.getElementById('results-body');
+  const p=profile;
+  const col={'A1':'#c96060','A2':'#c96060','B1':'#d4a853','B2':'#d4a853','C1':'#6eb8a0','C2':'#9b7fd4'};
+  const pct={'A1':12,'A2':22,'B1':38,'B2':55,'C1':72,'C2':90};
+  const bar=(label,lv,score)=>`<div class="skill-row">
+    <span class="skill-label">${label}</span>
+    <div class="skill-bar"><div class="skill-fill" style="width:${pct[lv]||50}%;background:${col[lv]||'var(--gold)'}"></div></div>
+    <span class="skill-val">${score}</span>
+  </div>`;
+  b.innerHTML=`
+    <div style="text-align:center;padding:26px 0 18px">
+      <div style="font-family:'Playfair Display',serif;font-size:54px;color:var(--gold);font-weight:700">${p.overall_level}</div>
+      <p style="color:var(--t2);font-size:13px;margin-top:8px;line-height:1.55;max-width:320px;margin-left:auto;margin-right:auto">${p.summary}</p>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="sec" style="margin-bottom:14px">Skill breakdown</div>
+      ${bar('Grammar',p.grammar,p.scores.grammar+'%')}
+      ${bar('Vocabulary',p.vocabulary,p.scores.vocabulary+'%')}
+      ${bar('Listening',p.listening,p.scores.listening+'%')}
+      ${bar('Speaking',p.speaking,'—')}
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="sec">Strengths</div>
+      ${(p.strengths||[]).map(s=>`<p style="font-size:13px;color:var(--teal);margin-bottom:5px">✓ ${s}</p>`).join('')}
+      <div style="height:10px"></div>
+      <div class="sec">Areas to develop</div>
+      ${(p.weaknesses||[]).map(w=>`<p style="font-size:13px;color:var(--t2);margin-bottom:5px">→ ${w}</p>`).join('')}
+    </div>
+    <div class="card" style="margin-bottom:20px">
+      <p style="font-size:13px;color:var(--t2);line-height:1.65">Claude will now build a 12-week programme targeting your specific weak points. Every lesson is generated fresh — no two are the same.</p>
+    </div>
+    <button class="btn gold full" id="build-btn" onclick="buildCurriculum()">Build my programme →</button>`;
+}
+
+/* ══════════════════════════
+   BUILD CURRICULUM
+══════════════════════════ */
+async function buildCurriculum() {
+  const btn=document.getElementById('build-btn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="dots"><span></span><span></span><span></span></span> Building programme…';
+
+  const sys=`You are an expert English course designer. Create a 12-week adaptive curriculum. Respond ONLY with valid JSON, no markdown.
+Schema: {"weeks":[{"week":1,"title":"short title","theme":"weekly theme","focuses":["focus1","focus2","focus3"],"lessons":[{"day":1,"type":"grammar|vocabulary|listening|speaking|reading|writing","title":"lesson title","objective":"one sentence stating what the learner will achieve"}]}]}
+Each week has exactly 5 lessons (days 1–5). Make the programme progressive: target weaknesses in weeks 1–4, broaden scope in weeks 5–8, consolidate and advance in weeks 9–12.`;
+
+  const msg=`Learner profile: ${JSON.stringify(profile)}.
+Key weaknesses: ${(profile.weaknesses||[]).join('; ')}.
+Overall level: ${profile.overall_level}.
+Build a challenging, intellectually stimulating 12-week English course appropriate for this level. Vary lesson types. First week should strongly target the top weakness.`;
+
+  try {
+    const raw=await callAPI([{role:'user',content:msg}],sys);
+    curriculum=JSON.parse(raw.replace(/```json|```/g,'').trim());
+  } catch(e) {
+    curriculum=fallbackCurriculum();
+  }
+  localStorage.setItem('lx_curr',JSON.stringify(curriculum));
+  progress.currentWeek=0; progress.currentLesson=0; saveProgress();
+  renderHome(); show('home');
+}
+
+function fallbackCurriculum() {
+  const themes=['Advanced Conditionals & Subjunctive','Idiomatic Expressions','Academic Vocabulary','Discourse Connectors','Complex Verb Forms','Passive & Causative Structures','Reported Speech & Backshift','Modality & Hedging Language','Collocations & Register','Constructing Arguments','Pronunciation & Prosody','Fluency & Consolidation'];
+  const types=['grammar','vocabulary','listening','speaking','reading'];
+  return {weeks:themes.map((theme,wi)=>({
+    week:wi+1,title:`Week ${wi+1}`,theme,
+    focuses:[theme,'Integrated practice','Review & extension'],
+    lessons:Array.from({length:5},(_,di)=>({
+      day:di+1,type:types[di%5],
+      title:`${theme} — Day ${di+1}`,
+      objective:"Master today's target structure through guided and communicative practice."
+    }))
+  }))};
+}
+
+/* ══════════════════════════
+   HOME
+══════════════════════════ */
+function renderHome() {
+  if (!profile) return;
+  const wi=progress.currentWeek||0;
+  const li=progress.currentLesson||0;
+  const w=curriculum?.weeks[wi];
+  const l=w?.lessons[li];
+  const done=(progress.lessonsCompleted||[]).length;
+  const acc=progress.totalAnswered>0?Math.round(progress.totalCorrect/progress.totalAnswered*100):0;
+  document.getElementById('home-lv').textContent=`${profile.overall_level} · ${w?`Week ${wi+1}`:'No programme yet'}`;
+  const pct={'A1':12,'A2':22,'B1':38,'B2':55,'C1':72,'C2':90};
+
+  document.getElementById('home-body').innerHTML=`
+    <div style="margin-bottom:22px">
+      <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:6px">${greet()}</div>
+      <p style="font-size:13px;color:var(--t2)">Streak: <strong style="color:var(--gold)">${progress.streak} day${progress.streak!==1?'s':''}</strong> · Accuracy: <strong style="color:var(--gold)">${acc}%</strong></p>
+    </div>
+    ${w&&l?`
+    <div class="sec">Today's lesson</div>
+    <div class="card" style="margin-bottom:16px;border-color:rgba(212,168,83,.4)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span style="font-size:24px">${typeIcon(l.type)}</span>
+        <div>
+          <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--t3);text-transform:uppercase;letter-spacing:.08em">Week ${wi+1} · ${cap(l.type)}</div>
+          <div style="font-size:16px;font-weight:500;margin-top:2px">${l.title}</div>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--t2);margin-bottom:14px">${l.objective}</p>
+      <button class="btn gold full" onclick="startLesson()">Open lesson →</button>
+    </div>`:`
+    <div class="card" style="margin-bottom:16px">
+      <p style="color:var(--t2);font-size:14px">${curriculum?'🎉 All lessons complete!':'No programme yet. Complete the placement test first.'}</p>
+    </div>`}
+    <div class="sec" style="margin-top:6px">Quick access</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+      <div class="card" style="cursor:pointer;text-align:center" onclick="show('chat')">
+        <div style="font-size:24px;margin-bottom:6px">💬</div>
+        <div style="font-size:14px;font-weight:500">Conversation</div>
+        <div style="font-size:12px;color:var(--t2);margin-top:2px">Free practice</div>
+      </div>
+      <div class="card" style="cursor:pointer;text-align:center" onclick="show('curr')">
+        <div style="font-size:24px;margin-bottom:6px">📋</div>
+        <div style="font-size:14px;font-weight:500">Programme</div>
+        <div style="font-size:12px;color:var(--t2);margin-top:2px">${done} lesson${done!==1?'s':''} done</div>
+      </div>
+    </div>
+    <div class="sec">Your profile</div>
+    <div class="card">
+      ${[['Grammar',profile.grammar],['Vocabulary',profile.vocabulary],['Listening',profile.listening],['Speaking',profile.speaking]].map(([n,lv])=>`
+      <div class="skill-row">
+        <span class="skill-label">${n}</span>
+        <div class="skill-bar"><div class="skill-fill" style="width:${pct[lv]||50}%;background:var(--gold)"></div></div>
+        <span class="skill-val">${lv}</span>
+      </div>`).join('')}
+    </div>`;
+}
+
+function greet(){const h=new Date().getHours();return h<12?'Good morning':'Good afternoon';}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+function typeIcon(t){return{grammar:'⚙️',vocabulary:'📖',listening:'🎧',speaking:'🎤',reading:'📄',writing:'✍️'}[t]||'📚';}
+
+/* ══════════════════════════
+   CURRICULUM
+══════════════════════════ */
+function renderCurriculum() {
+  if (!curriculum) return;
+  const done=(progress.lessonsCompleted||[]).length;
+  document.getElementById('curr-sub').textContent=`${curriculum.weeks.length} weeks · ${done} lessons completed`;
+  document.getElementById('curr-body').innerHTML=curriculum.weeks.map((w,wi)=>{
+    const isCurr=wi===(progress.currentWeek||0);
+    const isDone=wi<(progress.currentWeek||0);
+    return `<div class="week-card ${isCurr?'active-week':isDone?'done-week':''}" onclick="expandWeek(${wi})">
+      <div class="wk-head">
+        <span class="wk-num">WEEK ${w.week}</span>
+        <span class="wk-title">${w.theme}</span>
+        ${isCurr?'<span class="wk-badge curr">Current</span>':isDone?'<span class="wk-badge done">✓ Done</span>':''}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${(w.focuses||[]).map(f=>`<span class="focus-tag">${f}</span>`).join('')}</div>
+      <div id="wd-${wi}" style="display:none;margin-top:12px;border-top:1px solid var(--bd);padding-top:12px">
+        ${w.lessons.map((l,li)=>{
+          const dk=`${wi}-${li}`;
+          const ldone=(progress.lessonsCompleted||[]).includes(dk);
+          return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--bd)">
+            <span style="font-size:17px">${typeIcon(l.type)}</span>
+            <div style="flex:1"><div style="font-size:13px">${l.title}</div><div style="font-size:11px;color:var(--t3)">${cap(l.type)}</div></div>
+            ${ldone?'<span style="color:var(--teal);font-size:13px">✓</span>':''}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+function expandWeek(wi){const d=document.getElementById('wd-'+wi);if(d)d.style.display=d.style.display==='none'?'block':'none';}
+
+/* ══════════════════════════
+   LESSON ENGINE
+══════════════════════════ */
+async function startLesson() {
+  if (!curriculum){toast('Complete the placement test first');return;}
+  const wi=progress.currentWeek||0;
+  const li=progress.currentLesson||0;
+  const w=curriculum.weeks[wi];
+  const l=w?.lessons[li];
+  if (!l){toast('All lessons complete!');return;}
+
+  show('lesson');
+  document.getElementById('t-lesson').classList.add('on');
+  document.getElementById('lesson-title').textContent=typeIcon(l.type)+' '+cap(l.type);
+  document.getElementById('lesson-sub').textContent=`Week ${w.week} · ${l.title}`;
+  lessonCorrect=0; lessonTotal=0; answeredExs={};
+  updateLessonScore();
+
+  const body=document.getElementById('lesson-body');
+  body.innerHTML=`<div style="text-align:center;padding:44px 20px">
+    <div class="dots"><span></span><span></span><span></span></div>
+    <p style="margin-top:14px;color:var(--t2);font-size:14px">Claude is preparing your lesson…</p>
+  </div>`;
+
+  const sys=`You are an expert English tutor. Create a complete lesson for a learner at ${profile.overall_level} level.
+Profile: Grammar=${profile.grammar}, Vocabulary=${profile.vocabulary}, Listening=${profile.listening}, Speaking=${profile.speaking}.
+Key weaknesses: ${(profile.weaknesses||[]).join('; ')}.
+Respond ONLY with valid JSON — no markdown, no text outside the JSON object.`;
+
+  const msg=`Create a ${l.type} lesson titled "${l.title}".
+Objective: ${l.objective}
+Level: ${profile.overall_level}
+
+Return this JSON:
+{
+  "title": "lesson title",
+  "type": "${l.type}",
+  "intro": "2-3 sentence introduction to the topic",
+  "explanation": "Clear, accurate explanation of the target language point (4-6 sentences). Use examples.",
+  "tts_text": "150-200 word English passage for reading/listening aloud, stylistically appropriate for ${profile.overall_level}",
+  "exercises": [
+    {
+      "type": "multiple_choice",
+      "prompt": "question or sentence (use ___ for blanks)",
+      "options": ["A","B","C","D"],
+      "answer": "A",
+      "explanation": "Why this answer is correct — 1-2 sentences."
+    }
+  ]
+}
+Include exactly 4 exercises. Mix types: at least 2 multiple_choice, and 1-2 open-ended (type: "rewrite" or "fill_blank" with no options array). Make them genuinely challenging for ${profile.overall_level}.`;
+
+  try {
+    const raw=await callAPI([{role:'user',content:msg}],sys);
+    lessonData=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    renderLesson();
+  } catch(e) {
+    body.innerHTML=`<div class="card"><p style="color:var(--red)">Failed to load lesson: ${e.message}</p><button class="btn gold full" style="margin-top:12px" onclick="startLesson()">Retry</button></div>`;
+  }
+}
+
+function renderLesson() {
+  const d=lessonData;
+  document.getElementById('lesson-body').innerHTML=`
+    <div class="card" style="margin-bottom:12px">
+      <div class="sec" style="margin-bottom:6px">About this lesson</div>
+      <p style="font-size:14px;color:var(--t2);line-height:1.65">${d.intro}</p>
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="sec" style="margin-bottom:6px">Explanation</div>
+      <p style="font-size:14px;line-height:1.75;color:var(--t1)">${d.explanation}</p>
+    </div>
+    ${d.tts_text?`
+    <div class="card" style="margin-bottom:16px">
+      <div class="sec" style="margin-bottom:8px">Passage — read or listen</div>
+      <p style="font-size:13px;color:var(--t2);line-height:1.8;margin-bottom:12px">${d.tts_text}</p>
+      <div class="spd-row">
+        <span class="spd on" onclick="setSpd(1.0,this)">1×</span>
+        <span class="spd" onclick="setSpd(0.75,this)">0.75×</span>
+        <span class="spd" onclick="setSpd(0.6,this)">0.6×</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn gold sm" onclick="speak(lessonData.tts_text,ttsRate)">▶ Play</button>
+        <button class="btn ghost sm" onclick="speechSynthesis.cancel()">■ Stop</button>
+      </div>
+    </div>`:''}
+    <div class="sec">Exercises</div>
+    ${(d.exercises||[]).map((ex,i)=>renderExCard(ex,i)).join('')}
+    <div id="lesson-done" style="display:none;margin-top:10px">
+      <div class="card" style="text-align:center;border-color:var(--teal)">
+        <div style="font-size:32px;margin-bottom:8px">🎉</div>
+        <div style="font-size:18px;font-weight:600;color:var(--teal);margin-bottom:6px">Lesson complete!</div>
+        <p style="font-size:13px;color:var(--t2);margin-bottom:14px">Score: ${lessonCorrect}/${lessonTotal} correct</p>
+        <button class="btn gold full" onclick="completeLesson()">Save & continue →</button>
+      </div>
+    </div>`;
+}
+
+function renderExCard(ex,i) {
+  if (ex.type==='multiple_choice'||ex.type==='true_false') {
+    const opts=ex.options||(ex.type==='true_false'?['True','False']:[]);
+    return `<div class="card" style="margin-bottom:10px" id="ex-${i}">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--t3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">Exercise ${i+1}</div>
+      <p style="font-size:15px;line-height:1.6;margin-bottom:4px">${(ex.prompt||'').replace(/___/g,'<strong style="color:var(--gold)">___</strong>')}</p>
+      <div class="opts" id="ex-opts-${i}">
+        ${opts.map((o,oi)=>`<div class="opt" onclick="answerLesson(${i},${oi},'${esc(o)}','${esc(ex.answer)}','${esc(ex.explanation||'')}')"><span class="ol">${'ABCD'[oi]||oi}</span>${o}</div>`).join('')}
+      </div>
+      <div class="fb" id="ex-fb-${i}"></div>
+    </div>`;
+  }
+  return `<div class="card" style="margin-bottom:10px" id="ex-${i}">
+    <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--t3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">Exercise ${i+1}</div>
+    <p style="font-size:15px;line-height:1.6;margin-bottom:10px">${(ex.prompt||'').replace(/___/g,'<strong style="color:var(--gold)">___</strong>')}</p>
+    <textarea class="inp" id="ex-inp-${i}" placeholder="Type your answer…"></textarea>
+    <button class="btn gold full sm" style="margin-top:8px" onclick="checkOpen(${i})">Check answer</button>
+    <div class="fb" id="ex-fb-${i}"></div>
+  </div>`;
+}
+
+function esc(s){return(s||'').replace(/'/g,"\\'").replace(/\n/g,' ').replace(/"/g,'&quot;');}
+
+function answerLesson(i,oi,chosen,answer,expl) {
+  if(answeredExs[i])return;
+  answeredExs[i]=true;
+  const correct=chosen.trim().toLowerCase()===answer.trim().toLowerCase()||
+    ('ABCD'[oi]===answer.trim().charAt(0).toUpperCase());
+  document.querySelectorAll(`#ex-opts-${i} .opt`).forEach((o,idx)=>{
+    o.classList.add('dis');
+    const letter='ABCD'[idx];
+    if(letter===answer.trim().charAt(0).toUpperCase()||o.textContent.trim().slice(1).trim().toLowerCase()===answer.trim().toLowerCase()) o.classList.add('ok');
+    else if(idx===oi&&!correct) o.classList.add('bad');
+  });
+  setFb(i,correct,(correct?'✓ Correct. ':'✗ Incorrect. ')+expl);
+  scoreLesson(correct); checkAllDone();
+}
+
+async function checkOpen(i) {
+  if(answeredExs[i])return;
+  const inp=document.getElementById(`ex-inp-${i}`);
+  const val=inp?.value?.trim();
+  if(!val){toast('Please write your answer first');return;}
+  answeredExs[i]=true; inp.disabled=true;
+  const btn=document.querySelector(`#ex-${i} .btn`); if(btn)btn.disabled=true;
+  setFb(i,null,'Checking…');
+  const ex=lessonData.exercises[i];
+  try {
+    const sys2=`You are an English teacher. Evaluate the student's answer in 1-2 sentences. Start with ✓ Correct or ✗ Incorrect. If wrong, give the correct form and briefly explain why.`;
+    const m2=`Exercise: "${ex.prompt}"\nModel answer: "${ex.answer}"\nStudent wrote: "${val}"`;
+    const fb2=await callAPI([{role:'user',content:m2}],sys2);
+    const ok=fb2.startsWith('✓')||fb2.toLowerCase().startsWith('correct');
+    setFb(i,ok,fb2); scoreLesson(ok);
+  } catch {
+    setFb(i,null,`Model answer: ${ex.answer}. ${ex.explanation||''}`); scoreLesson(false);
+  }
+  checkAllDone();
+}
+
+function setFb(i,ok,text) {
+  const fb=document.getElementById(`ex-fb-${i}`);
+  if(!fb)return;
+  fb.textContent=text||'';
+  fb.className='fb on '+(ok===true?'ok':ok===false?'bad':'');
+}
+function scoreLesson(ok) {
+  lessonTotal++; if(ok)lessonCorrect++;
+  progress.totalAnswered++; if(ok)progress.totalCorrect++;
+  saveProgress(); updateLessonScore();
+}
+function updateLessonScore(){document.getElementById('lesson-score').textContent=lessonCorrect+'/'+lessonTotal;}
+function checkAllDone() {
+  if(!lessonData)return;
+  if(Object.keys(answeredExs).length>=lessonData.exercises.length){
+    const el=document.getElementById('lesson-done');
+    if(el){el.style.display='block';el.scrollIntoView({behavior:'smooth'});}
+  }
+}
+function completeLesson() {
+  const key=`${progress.currentWeek||0}-${progress.currentLesson||0}`;
+  if(!progress.lessonsCompleted)progress.lessonsCompleted=[];
+  if(!progress.lessonsCompleted.includes(key))progress.lessonsCompleted.push(key);
+  const w=curriculum.weeks[progress.currentWeek||0];
+  progress.currentLesson=(progress.currentLesson||0)+1;
+  if(progress.currentLesson>=w.lessons.length){
+    progress.currentLesson=0;
+    progress.currentWeek=Math.min((progress.currentWeek||0)+1,curriculum.weeks.length-1);
+  }
+  answeredExs={}; saveProgress(); toast('✓ Lesson saved!'); show('home');
+}
+
+/* ══════════════════════════
+   CHAT
+══════════════════════════ */
+const CHAT_SYS=()=>`You are a warm, engaging English conversation partner for a ${profile?.overall_level||'C1'}-level learner.
+Rules:
+- Respond naturally and keep the conversation going
+- When you notice a genuine grammatical error or unnatural phrasing, correct it inline using: [correction: "what they wrote" → "better version" — brief reason]
+- Only correct real mistakes — not stylistic choices
+- Match the user's topic and energy
+- Keep responses conversational in length — not too long
+- Occasionally use vocabulary appropriate for ${profile?.overall_level||'C1'}`;
+
+function initChat() {
+  if(chatHistory.length>0)return;
+  document.getElementById('chat-msgs').innerHTML='';
+  addMsg('a',"Hello! I'm your English conversation partner. Write to me about anything — I'll respond naturally and quietly note any mistakes I spot. What's on your mind today?");
+}
+
+async function sendChat() {
+  const cin=document.getElementById('cin');
+  const text=cin.textContent.trim();
+  if(!text||chatStreaming)return;
+  cin.textContent='';
+  addMsg('u',text);
+  chatHistory.push({role:'user',content:text});
+  chatStreaming=true;
+  document.getElementById('sbtn').disabled=true;
+  const tid=addMsg('a','<span class="dots"><span></span><span></span><span></span></span>',true);
+  try {
+    const el=document.getElementById('cm-'+tid);
+    await callAPI(chatHistory,CHAT_SYS(),(chunk)=>{
+      if(el)el.querySelector('.bubble').innerHTML=fmtChat(chunk);
+      scrollChat();
+    });
+    chatHistory.push({role:'assistant',content:document.getElementById('cm-'+tid)?.querySelector('.bubble')?.textContent||''});
+  } catch(e) {
+    const el=document.getElementById('cm-'+tid);
+    if(el)el.querySelector('.bubble').textContent='Error: '+e.message;
+  } finally {
+    chatStreaming=false;
+    document.getElementById('sbtn').disabled=false;
+  }
+}
+
+function fmtChat(t){
+  return t.replace(/\[correction: "(.*?)" → "(.*?)" — (.*?)\]/g,
+    '<span style="background:rgba(212,168,83,.12);border-radius:5px;padding:1px 6px;font-size:12px">✎ <del style="color:var(--red)">$1</del> → <strong style="color:var(--teal)">$2</strong> <em style="color:var(--t3)">($3)</em></span>'
+  ).replace(/\n/g,'<br>');
+}
+
+let mcnt=0;
+function addMsg(role,text,isLoad=false) {
+  const id=++mcnt;
+  const div=document.createElement('div');
+  div.className='msg '+role; div.id='cm-'+id;
+  div.innerHTML=role==='a'
+    ?`<div class="av">🤖</div><div class="bubble">${isLoad?text:fmtChat(text)}</div>`
+    :`<div class="bubble">${text}</div>`;
+  document.getElementById('chat-msgs').appendChild(div);
+  scrollChat(); return id;
+}
+function scrollChat(){const m=document.getElementById('chat-msgs');m.scrollTop=m.scrollHeight;}
+function chatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}}
+function clearChat(){chatHistory=[];document.getElementById('chat-msgs').innerHTML='';initChat();}
+
+/* ══════════════════════════
+   CLAUDE API
+══════════════════════════ */
+async function callAPI(messages,system,onChunk) {
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':API_KEY,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true',
+    },
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:1500,
+      system,messages,
+      stream:!!onChunk,
+    })
+  });
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${res.status}`);}
+  if(onChunk){
+    const reader=res.body.getReader(),dec=new TextDecoder();let full='';
+    while(true){
+      const{done,value}=await reader.read();if(done)break;
+      for(const line of dec.decode(value).split('\n')){
+        if(line.startsWith('data: ')){
+          try{const d=JSON.parse(line.slice(6));if(d.delta?.text){full+=d.delta.text;onChunk(full);}}catch{}
+        }
+      }
+    }
+    return full;
+  }
+  const data=await res.json();return data.content[0].text;
+}
+
+/* ══════════════════════════
+   TTS & UTILS
+══════════════════════════ */
+function speak(text,rate) {
+  if(!('speechSynthesis' in window)){toast('TTS not available in this browser');return;}
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='en-GB'; u.rate=rate||ttsRate||1.0;
+  const vv=speechSynthesis.getVoices();
+  const v=vv.find(v=>v.name.includes('Daniel'))||vv.find(v=>v.lang.startsWith('en-GB'))||vv.find(v=>v.lang.startsWith('en'));
+  if(v)u.voice=v;
+  speechSynthesis.speak(u);
+}
+function setSpd(s,el){ttsRate=s;document.querySelectorAll('.spd').forEach(c=>c.classList.remove('on'));if(el)el.classList.add('on');}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(window._tt);window._tt=setTimeout(()=>t.classList.remove('on'),2600);}
+function checkStreak(){const today=new Date().toDateString();if(progress.lastDate!==today){const y=new Date(Date.now()-86400000).toDateString();progress.streak=progress.lastDate===y?(progress.streak||0)+1:1;progress.lastDate=today;saveProgress();}}
+function saveProgress(){localStorage.setItem('lx_prog',JSON.stringify(progress));}
+</script>
+</body>
+</html>
