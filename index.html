@@ -116,22 +116,22 @@ textarea.inp{resize:none;min-height:90px;line-height:1.5}
 
 <!-- SETUP -->
 <div id="sc-setup" class="sc on">
-  <div class="tb"><div><div class="logo">LEXIS</div><div class="sub">Adaptive English · Gemini AI</div></div></div>
+  <div class="tb"><div><div class="logo">LEXIS</div><div class="sub">Adaptive English · Groq AI</div></div></div>
   <div class="scroll">
     <div style="margin-bottom:28px">
       <h1 class="hero" style="margin-bottom:10px">Your personal<br>English course,<br><em>built by AI.</em></h1>
       <p style="color:var(--t2);font-size:14px;line-height:1.6">LEXIS assesses your level across all four skills, then builds a personalised 12-week programme and generates every lesson fresh — targeting exactly your weak points.</p>
     </div>
     <div style="margin-bottom:20px">
-      <div class="sec">Google Gemini API Key</div>
-      <input class="inp" id="k-inp" type="password" placeholder="AIza..." autocomplete="off" spellcheck="false" style="margin-bottom:10px">
+      <div class="sec">Groq API Key</div>
+      <input class="inp" id="k-inp" type="password" placeholder="gsk_..." autocomplete="off" spellcheck="false" style="margin-bottom:10px">
       <div class="card" style="font-size:13px;color:var(--t2);line-height:1.7">
         <strong style="color:var(--t1)">How to get a free key:</strong><br>
-        1. Go to <a href="https://aistudio.google.com" target="_blank" style="color:var(--gold)">aistudio.google.com</a><br>
-        2. Sign in with Google → <strong style="color:var(--t1)">Get API key</strong> → Create API key<br>
-        3. Copy the key (starts with <code style="color:var(--gold)">AIza</code>)<br><br>
-        ✅ Completely free — no credit card required<br>
-        🔒 Stored only in this browser, sent only to Google's API.
+        1. Go to <a href="https://console.groq.com" target="_blank" style="color:var(--gold)">console.groq.com</a><br>
+        2. Sign in with Google → <strong style="color:var(--t1)">API Keys</strong> → Create API key<br>
+        3. Copy the key (starts with <code style="color:var(--gold)">gsk_</code>)<br><br>
+        ✅ Free tier — very generous limits, no credit card<br>
+        🔒 Stored only in this browser, sent only to Groq's API.
       </div>
     </div>
     <button class="btn gold full" onclick="startSetup()">Begin placement test →</button>
@@ -255,7 +255,7 @@ const LISTENING_QS = [
 /* ══════════════════════════
    STATE
 ══════════════════════════ */
-let API_KEY = localStorage.getItem('lx_gemini_key') || '';
+let API_KEY = localStorage.getItem('lx_groq_key') || '';
 let profile  = JSON.parse(localStorage.getItem('lx_profile') || 'null');
 let curriculum = JSON.parse(localStorage.getItem('lx_curr') || 'null');
 let progress = JSON.parse(localStorage.getItem('lx_prog') || '{"currentWeek":0,"currentLesson":0,"lessonsCompleted":[],"streak":0,"lastDate":"","totalCorrect":0,"totalAnswered":0}');
@@ -312,9 +312,9 @@ function show(name) {
 ══════════════════════════ */
 function startSetup() {
   const key = document.getElementById('k-inp').value.trim();
-  if (!key.startsWith('AIza')) { toast('Please enter a valid Gemini API key (starts with AIza)'); return; }
+  if (!key.startsWith('gsk_')) { toast('Please enter a valid Groq API key (starts with gsk_)'); return; }
   API_KEY = key;
-  localStorage.setItem('lx_gemini_key', key);
+  localStorage.setItem('lx_groq_key', key);
   startTest();
 }
 
@@ -938,38 +938,36 @@ function chatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat
 function clearChat(){chatHistory=[];document.getElementById('chat-msgs').innerHTML='';initChat();}
 
 /* ══════════════════════════
-   GEMINI API
+   GROQ API (OpenAI-compatible)
 ══════════════════════════ */
 async function callAPI(messages, system, onChunk) {
-  // Convert OpenAI-style messages to Gemini format
-  const contents = messages.map(m => ({
-    role: m.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: m.content }]
-  }));
-
+  const model = 'llama-3.3-70b-versatile';
   const body = {
-    system_instruction: { parts: [{ text: system }] },
-    contents,
-    generationConfig: {
-      maxOutputTokens: 1500,
-      temperature: 0.7,
-    }
+    model,
+    max_tokens: 1500,
+    temperature: 0.7,
+    stream: !!onChunk,
+    messages: [
+      { role: 'system', content: system },
+      ...messages
+    ]
   };
 
-  const model = 'gemini-2.0-flash';
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${API_KEY}`,
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(e.error?.message || `HTTP ${res.status}`);
+  }
 
   if (onChunk) {
-    // Streaming
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${API_KEY}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (!res.ok) {
-      const e = await res.json().catch(() => ({}));
-      throw new Error(e.error?.message || `HTTP ${res.status}`);
-    }
     const reader = res.body.getReader(), dec = new TextDecoder();
     let full = '';
     while (true) {
@@ -977,10 +975,10 @@ async function callAPI(messages, system, onChunk) {
       if (done) break;
       const lines = dec.decode(value).split('\n');
       for (const line of lines) {
-        if (line.startsWith('data: ')) {
+        if (line.startsWith('data: ') && line !== 'data: [DONE]') {
           try {
             const d = JSON.parse(line.slice(6));
-            const chunk = d.candidates?.[0]?.content?.parts?.[0]?.text;
+            const chunk = d.choices?.[0]?.delta?.content;
             if (chunk) { full += chunk; onChunk(full); }
           } catch {}
         }
@@ -988,19 +986,8 @@ async function callAPI(messages, system, onChunk) {
     }
     return full;
   } else {
-    // Non-streaming
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (!res.ok) {
-      const e = await res.json().catch(() => ({}));
-      throw new Error(e.error?.message || `HTTP ${res.status}`);
-    }
     const data = await res.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    return data.choices?.[0]?.message?.content || '';
   }
 }
 
